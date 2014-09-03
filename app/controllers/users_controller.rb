@@ -2,6 +2,7 @@ class UsersController < ApplicationController
   before_action :signed_in_user, only: [:index, :edit, :update, :destroy]
   before_action :correct_user,   only: [:edit, :update]
   before_action :admin_user,     only: :destroy
+  before_action :restrict_registration, only: [:new, :create]
   
   def index
     @users = User.paginate(page: params[:page])
@@ -38,10 +39,24 @@ class UsersController < ApplicationController
     end
   end
   
+#  def destroy
+#    User.find(params[:id]).destroy
+#    flash[:success] = "User deleted."
+#    redirect_to users_url
+#  end
+
   def destroy
-    User.find(params[:id]).destroy
-    flash[:success] = "User deleted."
+    user = User.find(params[:id])
+    unless current_user?(user)
+      user.destroy
+      flash[:success] = "User deleted."
+    end
     redirect_to users_url
+  end 
+  
+  def show
+    @user = User.find(params[:id])
+    @microposts = @user.microposts.paginate(page: params[:page])
   end
   
   private
@@ -67,6 +82,10 @@ class UsersController < ApplicationController
     
     def admin_user
       redirect_to(root_url) unless current_user.admin?
+    end
+    
+    def restrict_registration
+       redirect_to root_url, notice: "You are already regsitered." if signed_in?
     end
 end
 
